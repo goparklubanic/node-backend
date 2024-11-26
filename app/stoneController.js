@@ -3,21 +3,38 @@ const db = require("./db");
 
 // Fetch all stones
 const getStones = async (req, res) => {
-  const { style } = req.query;
+  // const { style } = req.query;
+  const { style } = req.params;
+
+  if (!style) {
+    return res.status(400).json({ error: "Style query parameter is required" });
+  }
+
+  let stylo = `${style}%`; // Append the '%' wildcard to the style
+  let commando = `
+  SELECT 
+    mp.id, mp.style_no, 
+    msi.id AS msi_id, msi.diamond_id, msi.color, msi.quantity, msi.setting_level, 
+    mds.kode, mds.id AS mds_id, mds.shape, mds.size, mds.weight 
+  FROM 
+    master_product mp 
+  JOIN 
+    master_stone_info msi 
+    ON msi.product_id = mp.id 
+  JOIN 
+    master_diamond_size mds 
+    ON msi.diamond_id = mds.id 
+  WHERE 
+    mp.style_no LIKE ?
+`;
+
   try {
-    let query =
-      "SELECT mp.id, mp.style_no, msi.id as msi_id, msi.diamond_id, msi.color,msi.quantity, msi.setting_level, mds.kode, mds.id as mds_id, mds.shape, mds.size, mds.weight FROM master_product mp JOIN master_stone_info msi ON msi.product_id=mp.id JOIN master_diamond_size mds ON msi.diamond_id = mds.id";
-    const params = [];
-    if (style) {
-      // WHERE mp.style_no LIKE 'K0022E01%'
-      style = `${style}`;
-      query += " WHERE mp.style_no = ?";
-      params.push(style);
-    }
-    const [rows] = await db.query(query, params);
+    const [rows] = await db.query(commando, [stylo]); // Safely pass `stylo` as a parameter
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch stones" });
+    res
+      .status(500)
+      .json({ error: "Database query failed", details: err.message });
   }
 };
 
@@ -50,8 +67,8 @@ const test = async (req, res) => {
 // Test Query
 const testQuery = async (req, res) => {
   const { style } = req.params;
-  const { styles } = style + "%";
-  res.json({ message: "Your request for ${styles}  is success" });
+  // const { styles } = style + "%";
+  res.json({ message: `Your request for ${style}%  is success` });
 };
 
 module.exports = { getStones, addStone, test, testQuery };
