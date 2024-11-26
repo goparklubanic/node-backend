@@ -4,7 +4,7 @@ const pool = mysql.createPool({
   // host: "mysql" <- docker service,
   host: "10.10.11.11",
   user: "ptven",
-  password: "",
+  password: "ptven123",
   database: "sample",
   port: 3306,
 });
